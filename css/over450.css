@@ -1,7 +1,17 @@
 nav h1 a {
-    color:red;
+    color: red;
 }
 
 #restaurants-list li{
-    max-width:400px;
+    flex-direction: row;
+    max-width: 380px;
+}
+
+#restaurants-list .restaurant-img {
+    width: 50%;
+}
+
+#restaurants-list .restaurant-details{
+    width: 50%;
+    margin: 10px 10px 10px 10px
 }

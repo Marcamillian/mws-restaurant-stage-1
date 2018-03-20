@@ -1,0 +1,13 @@
+
+#restaurants-list li{
+    flex-direction: column;
+}
+
+#restaurants-list .restaurant-img {
+    width:100%
+}
+
+#restaurants-list .restaurant-details{
+    width:100%;
+    padding-bottom:10px;
+}
