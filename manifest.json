@@ -3,15 +3,18 @@
   "name": "Restaurant Reviews",
   "icons":[
     {
-      "src":"launcher-icon-48_1x.png",
-      "type":"image/png",
-      "sizes": "48x48"
+        "src":"img/launcher-icon-192_1x.png",
+        "type":"image/png",
+        "sizes": "192x192"
     },
     {
-        "src":"launcher-icon-96_2x.png",
-        "type":"image/png",
-        "sizes": "96x96"
-      }
+      "src" : "img/launcher-icon-512_2x.png",
+      "type":"image/png",
+      "sizes": "512x512"
+    }
   ],
-  "start_url": "index.html?launcher=true"
+  "start_url": "index.html?launcher=true",
+  "theme_color": "black",
+  "display":"fullscreen",
+  "background_color":"white"
 }
