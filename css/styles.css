@@ -327,7 +327,7 @@ nav h1 a {
   transition: transform 0.3s ease;
 
   z-index:2;
-  padding:10px;
+  padding:10px 0px;
 }
 
 .update-dialog p{

@@ -17,12 +17,13 @@
   <header>
     <nav>
       <h1><a href="/">Restaurant Reviews</a></h1>
+      <section class="update-dialog modal" aria-hidden=true>
+        <p> Update Available </p>
+        <button id="install-update" class="install-update" tabindex=-1 aria-label="webpage update available"> Update Now </button>
+        <button class="dismiss-update" tabindex=-1> Update Later </button>
+      </section>
     </nav>
-    <section class="update-dialog modal" aria-hidden=true>
-      <p> Update Available </p>
-      <button id="install-update" class="install-update" tabindex=-1 aria-label="webpage update available"> Update Now </button>
-      <button class="dismiss-update" tabindex=-1> Update Later </button>
-    </section>
+    
   </header>
 
   <main id="maincontent">
