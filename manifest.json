@@ -1,0 +1,20 @@
+{
+  "short_name": "RESTRevs",
+  "name": "Restaurant Reviews",
+  "icons":[
+    {
+        "src":"img/launcher-icon-192_1x.png",
+        "type":"image/png",
+        "sizes": "192x192"
+    },
+    {
+      "src" : "img/launcher-icon-512_2x.png",
+      "type":"image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html?launcher=true",
+  "theme_color": "black",
+  "display":"fullscreen",
+  "background_color":"white"
+}
