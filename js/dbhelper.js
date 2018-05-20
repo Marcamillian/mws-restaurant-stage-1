@@ -7,13 +7,21 @@ class DBHelper {
     return 'restaurant-details'
   }
 
+  static get REVIEW_STORE_NAME(){
+    return 'review-details'
+  }
+
   constructor(){
-    this.dbPromise = idb.open(DBHelper.RESTAURANT_STORE_NAME, 1, (upgradeDb)=>{
+    this.dbPromise = idb.open(DBHelper.RESTAURANT_STORE_NAME, 2, (upgradeDb)=>{
+
       switch(upgradeDb.oldVersion){
         case 0:
-          var restaurantStore = upgradeDb.createObjectStore('restaurant-details', {keyPath:'id'});
+          var restaurantStore = upgradeDb.createObjectStore( DBHelper.RESTAURANT_STORE_NAME, {keyPath:'id'});
           restaurantStore.createIndex('by-neighborhood', 'neighborhood');
-          restaurantStore.createIndex('by-cuisine', 'cuisine_type')
+          restaurantStore.createIndex('by-cuisine', 'cuisine_type');
+        case 1:
+          var reviewStore = upgradeDb.createObjectStore(DBHelper.REVIEW_STORE_NAME, {keyPath:'id'})
+          reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
       }
     })
 
@@ -22,7 +30,7 @@ class DBHelper {
   // populate the local IndexedDB database
   // TODO: make this handle not having a connection
   populateOfflineDatabase(){
-    return fetch(DBHelper.DATABASE_URL)
+    return fetch(`${DBHelper.DATABASE_URL}/restaurants`)
       .then((response)=>{ return response.json(); })
       .then((restaurants)=>{ return Promise.all(restaurants.map(this.addRecord, this)) })
       .then(()=>{ console.log(`Database filled`) })
@@ -56,7 +64,7 @@ class DBHelper {
     }).then((response)=>{ // if nothing from the local database - get from the network
       return (response != undefined)
         ? response
-        : fetch(`${DBHelper.DATABASE_URL}/${restaurantId}`) // grab the restaurant from the database
+        : fetch(`${DBHelper.DATABASE_URL}/restaurants/${restaurantId}`) // grab the restaurant from the database
             .then(response => response.json()) // unwrap the json
             .then(response => { // store the response
               this.addRecord(response);
@@ -143,13 +151,31 @@ class DBHelper {
     })
   }
 
+  getReviewsByRestaurantId(restaurantId){
+    return this.dbPromise.then((db)=>{// try to get the reviews from database
+      let tx = db.transaction(DBHelper.REVIEW_STORE_NAME);
+      let reviewDetailsStore = tx.objectStore(DBHelper.REVIEW_STORE_NAME)
+      
+      return reviewDetailsStore.index('by-restaurant-id').getAll(restaurantId);
+    }).then((response)=>{
+      return(response.length != 0) // !!TODO : response is an empty array
+        ? response
+        :fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)
+          .then((response)=>{return response.json()})
+          .then((response) =>{
+            // add the record to the appropriate table
+            return response
+          })
+    })
+  }
+
   /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
     const port = 1337 // Change this to your server port
-    return `http://localhost:${port}/restaurants`;
+    return `http://localhost:${port}`;
   }
 
   /**
@@ -158,7 +184,7 @@ class DBHelper {
   static fetchRestaurants(callback) {
     // TODO: - how to deal with a failed fetch request to data source
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', DBHelper.DATABASE_URL);
+    xhr.open('GET', `${DBHelper.DATABASE_URL}/restaurants`);
     xhr.onload = () => {
       if (xhr.status === 200) { // Got a success response from server!
         const restaurants = JSON.parse(xhr.responseText);
