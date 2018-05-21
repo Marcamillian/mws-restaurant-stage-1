@@ -19,6 +19,7 @@ class DBHelper {
           var restaurantStore = upgradeDb.createObjectStore( DBHelper.RESTAURANT_STORE_NAME, {keyPath:'id'});
           restaurantStore.createIndex('by-neighborhood', 'neighborhood');
           restaurantStore.createIndex('by-cuisine', 'cuisine_type');
+          restaurantStore.createIndex('by-favourite', 'is_favourite')
         case 1:
           var reviewStore = upgradeDb.createObjectStore(DBHelper.REVIEW_STORE_NAME, {keyPath:'id'})
           reviewStore.createIndex('by-restaurant-id', 'restaurant_id');

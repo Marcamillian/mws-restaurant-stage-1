@@ -87,9 +87,10 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
+  //  get & fill reviews  
   dbHelper.getReviewsByRestaurantId(restaurant.id)
   .then(fillReviewsHTML)
+
 }
 
 /**
@@ -144,8 +145,10 @@ createReviewHTML = (review) => {
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
-  li.appendChild(date);
+  
+  reviewDate = new Date(review.createdAt)
+  date.innerHTML = reviewDate.toDateString()
+  li.appendChild(date); 
 
   const rating = document.createElement('p');
   rating.innerHTML = `Rating: ${review.rating}`;
