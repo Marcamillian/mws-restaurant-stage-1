@@ -32,18 +32,18 @@ class DBHelper {
   populateOfflineDatabase(){
     return fetch(`${DBHelper.DATABASE_URL}/restaurants`)
       .then((response)=>{ return response.json(); })
-      .then((restaurants)=>{ return Promise.all(restaurants.map(this.addRecord, this)) })
+      .then((restaurants)=>{ return Promise.all(restaurants.map((response)=>{this.addRecord(DBHelper.RESTAURANT_STORE_NAME, response)}, this)) })
       .then(()=>{ console.log(`Database filled`) })
       .catch((err)=>{
         console.log(`Database not updated with fresh network data:  ${err}`)
       })
   }
 
-  addRecord(restaurantDetails){
+  addRecord(storeName, recordObject){
     return this.dbPromise.then((db)=>{
-      var tx = db.transaction('restaurant-details', 'readwrite');
-      var listStore = tx.objectStore('restaurant-details');
-      listStore.put(restaurantDetails)
+      var tx = db.transaction(storeName, 'readwrite');
+      var listStore = tx.objectStore(storeName);
+      listStore.put(recordObject)
       return tx.complete;
     })
   }
@@ -67,7 +67,7 @@ class DBHelper {
         : fetch(`${DBHelper.DATABASE_URL}/restaurants/${restaurantId}`) // grab the restaurant from the database
             .then(response => response.json()) // unwrap the json
             .then(response => { // store the response
-              this.addRecord(response);
+              this.addRecord(DBHelper.RESTAURANT_STORE_NAME, response);
               return response
             })
     })
@@ -158,13 +158,15 @@ class DBHelper {
       
       return reviewDetailsStore.index('by-restaurant-id').getAll(restaurantId);
     }).then((response)=>{
-      return(response.length != 0) // !!TODO : response is an empty array
+      return(response.length != 0)
         ? response
         :fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)
           .then((response)=>{return response.json()})
-          .then((response) =>{
-            // add the record to the appropriate table
-            return response
+          .then((reviews) =>{
+            Promise.all(reviews.map((review)=>{
+              return this.addRecord(DBHelper.REVIEW_STORE_NAME, review)
+            }));
+            return reviews
           })
     })
   }
