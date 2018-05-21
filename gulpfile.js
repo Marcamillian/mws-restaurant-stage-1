@@ -28,6 +28,12 @@ var resizeImageTasks =[];
     resizeImageTasks.push(taskName);
 })
 
+//copy the svgs to the images folder
+gulp.task('copy-svgs', ()=>{
+    gulp.src('images_src/**/*.svg')
+      .pipe(gulp.dest('img'))
+})
+resizeImageTasks.push('copy-svgs')
 
 gulp.task('resize-images', resizeImageTasks);
 
