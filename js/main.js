@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   let updateOnlineStatus = (event)=>{
     var condition = navigator.onLine ? "online" : "offline";
     console.log(`App is now ${condition}`)
+    // TODO: Do something user facing when app goes on/offline
   }
   updateOnlineStatus()
   window.addEventListener('online', updateOnlineStatus);
@@ -160,6 +161,10 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
 
+
+  const imageContainer = document.createElement('div');
+  imageContainer.classList.add('image-container');
+
   const image = document.createElement('img');
   image.className = 'restaurant-img';
 
@@ -173,14 +178,15 @@ createRestaurantHTML = (restaurant) => {
                   ${urlComponents[0]}-800_2x.${ urlComponents[1] || 'jpg' } 2x`;
 
   image.alt = DBHelper.imageAltTextForRestaurant(restaurant);
-  li.append(image);
+  imageContainer.append(image);
 
   // add favourite icon
   const favButton = document.createElement('button');
   favButton.classList.add('fav-button');
-  favButton.innerText = "favourite";
   favButton.addEventListener('click', ()=>{dbHelper.setAsFavorite(restaurant.id)})
-  li.append(favButton)
+  imageContainer.append(favButton)
+
+  li.append(imageContainer)
 
   const name = document.createElement('h1');
   name.innerHTML = restaurant.name;

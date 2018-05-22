@@ -175,6 +175,11 @@ nav h1 a {
   text-align: left;
   width: 100%;
 }
+
+#restaurants-list .image-container{
+  position:relative;
+}
+
 #restaurants-list .restaurant-img {
   background-color: #ccc;
   display: block;
@@ -183,6 +188,23 @@ nav h1 a {
   /*min-height: 248px;*/
   min-width: 100%;
 }
+
+#restaurants-list li .fav-button{
+  position: absolute;
+  top:0px;
+  right:0px;
+  margin:10px;
+  width:55px;
+  height:50px;
+  background:url("/img/fav-false.svg");
+  background-size: cover;
+  border:none;
+}
+
+#restaurants-list li .fav-button.fav{
+  background:url("/img/fav-true.svg");
+}
+
 #restaurants-list li h1 {
   color: #f18200;
   font-family: Arial,sans-serif;
@@ -214,10 +236,6 @@ nav h1 a {
   text-align: center;
   text-decoration: none;
   text-transform: uppercase;
-}
-
-#restaurants-list li .fav-button{
-
 }
 
 /* ====================== Restaurant Details ====================== */
