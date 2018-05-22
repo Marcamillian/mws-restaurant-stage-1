@@ -10,6 +10,16 @@ let dbHelper = new DBHelper();
  */
 document.addEventListener('DOMContentLoaded', (event) => {
   
+  // START -- Detect offline - Sourced from - https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+  let updateOnlineStatus = (event)=>{
+    var condition = navigator.onLine ? "online" : "offline";
+    console.log(`App is now ${condition}`)
+  }
+  updateOnlineStatus()
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus)
+  /* END -- Detect offline */
+
   dbHelper.populateOfflineDatabase()
   .then(()=>{ // fill with network fresh data
     return Promise.all([

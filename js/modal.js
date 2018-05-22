@@ -58,8 +58,6 @@ const openModal = ()=>{
   modal.addEventListener('keydown', trapTabKey);
 }
 
-
-
 const closeModal = ()=>{
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', true);
