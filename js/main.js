@@ -114,7 +114,7 @@ updateRestaurants = () => {
   dbHelper.getRestaurantsByCuisineAndNeighborhood(cuisine, neighborhood)
     .then(resetRestaurants)
     .then(fillRestaurantsHTML)
-    .catch( err => console.err(err) )
+    .catch( err => console.error(err) )
   
 }
 
@@ -163,8 +163,14 @@ createRestaurantHTML = (restaurant) => {
                   ${urlComponents[0]}-800_2x.${ urlComponents[1] || 'jpg' } 2x`;
 
   image.alt = DBHelper.imageAltTextForRestaurant(restaurant);
-
   li.append(image);
+
+  // add favourite icon
+  const favButton = document.createElement('button');
+  favButton.classList.add('fav-button');
+  favButton.innerText = "favourite";
+  favButton.addEventListener('click', ()=>{dbHelper.setAsFavorite(restaurant.id)})
+  li.append(favButton)
 
   const name = document.createElement('h1');
   name.innerHTML = restaurant.name;

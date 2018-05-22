@@ -216,6 +216,10 @@ nav h1 a {
   text-transform: uppercase;
 }
 
+#restaurants-list li .fav-button{
+
+}
+
 /* ====================== Restaurant Details ====================== */
 .inside #maincontent{
   display:flex;

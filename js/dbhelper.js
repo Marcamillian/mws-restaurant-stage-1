@@ -172,6 +172,20 @@ class DBHelper {
     })
   }
 
+  setAsFavorite(restaurantId){
+    console.log(`Setting restuarantID:${restaurantId} is_favorite==true`);
+    // set it locally
+    // set it on the server
+     //fetch('PUT', `http://localhost:1337/restaurants/${restaurantId}/?is_favourite=true`)
+  }
+
+  removeAsFavorite(restaurantId){
+    console.log(`Setting restuarantID:${restaurantId}  is_favorite==false`);
+    // set it locally
+    // set it on the server
+     //fetch('PUT', `http://localhost:1337/restaurants/${restaurantId}/?is_favourite=false`)
+  }
+
   /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
