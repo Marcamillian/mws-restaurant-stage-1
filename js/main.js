@@ -183,7 +183,12 @@ createRestaurantHTML = (restaurant) => {
   // add favourite icon
   const favButton = document.createElement('button');
   favButton.classList.add('fav-button');
-  favButton.addEventListener('click', ()=>{dbHelper.setAsFavorite(restaurant.id)})
+  favButton.addEventListener('click', ()=>{
+    dbHelper.toggleAsFavorite(restaurant.id)
+    .then(()=>{
+      favButton.classList.toggle('fav')
+    })
+  })
   imageContainer.append(favButton)
 
   li.append(imageContainer)

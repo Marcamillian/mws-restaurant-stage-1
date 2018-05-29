@@ -196,13 +196,14 @@ nav h1 a {
   margin:10px;
   width:55px;
   height:50px;
-  background:url("/img/fav-false.svg");
+  background:url("/img/Fav_False.svg");
   background-size: cover;
   border:none;
 }
 
 #restaurants-list li .fav-button.fav{
-  background:url("/img/fav-true.svg");
+  background:url("/img/Fav_True.svg");
+  background-size:cover;
 }
 
 #restaurants-list li h1 {

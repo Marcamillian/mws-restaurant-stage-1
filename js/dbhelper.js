@@ -11,8 +11,12 @@ class DBHelper {
     return 'review-details'
   }
 
+  static get PENDING_REQUEST_STORE(){
+    return 'pending-requests'
+  }
+
   constructor(){
-    this.dbPromise = idb.open(DBHelper.RESTAURANT_STORE_NAME, 2, (upgradeDb)=>{
+    this.dbPromise = idb.open(DBHelper.RESTAURANT_STORE_NAME, 3, (upgradeDb)=>{
 
       switch(upgradeDb.oldVersion){
         case 0:
@@ -23,6 +27,8 @@ class DBHelper {
         case 1:
           var reviewStore = upgradeDb.createObjectStore(DBHelper.REVIEW_STORE_NAME, {keyPath:'id'})
           reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
+        case 2:
+         var pendingRequestsStore = upgradeDb.createObjectStore(DBHelper.PENDING_REQUEST_STORE, {keyPath:'submitTime'})
       }
     })
 
@@ -100,12 +106,12 @@ class DBHelper {
       let restaurants = [];
 
       restaurantDetailsStore.index('by-cuisine').openCursor(cuisine, "next")
-        .then(function checkRestaurant(cursor){
-          if(!cursor || restaurants.length >= numRecords ) return; 
-          if(cursor.value.neighborhood == neighborhood
-              || neighborhood == undefined ) restaurants.push(cursor.value)
-          return cursor.continue().then( checkRestaurant )
-        })
+      .then(function checkRestaurant(cursor){
+        if(!cursor || restaurants.length >= numRecords ) return; 
+        if(cursor.value.neighborhood == neighborhood
+            || neighborhood == undefined ) restaurants.push(cursor.value)
+        return cursor.continue().then( checkRestaurant )
+      })
       
       return tx.complete.then( () => restaurants )
     })
@@ -172,9 +178,63 @@ class DBHelper {
     })
   }
 
-  setAsFavorite(restaurantId){
-    console.log(`Setting restuarantID:${restaurantId} is_favorite==true`);
+  deletePendingRequest(url){
+    
+  }
+
+  storePendingRequest(url){
+    return this.dbPromise.then((db)=>{
+      let tx = db.transaction(DBHelper.PENDING_REQUEST_STORE, 'readwrite');
+      let pendingRequestStore = tx.objectStore(DNHelper.PENDING_REQUEST_STORE)
+      return pendingRequestStore.getAll()
+
+      // ?? something to do with tx.complete
+      
+
+      // once we have the list of requests
+      // for each request
+        // make the fetch reuest
+        // if success
+          // remove item from the pening reuests
+        // if failure
+          // notify user?
+          // if the request errored - leave it in for next time
+
+      // TODO : Finish writing this
+      //let tx = db.transaction(DBHelper.)
+    })
+  }
+
+  sendPendingRequests(){
+
+  }
+
+  toggleAsFavorite(restaurantId){
+
     // set it locally
+    return this.dbPromise.then((db)=>{
+      let tx = db.transaction(DBHelper.RESTAURANT_STORE_NAME, "readwrite");
+      let restaurantDetailsStore = tx.objectStore(DBHelper.RESTAURANT_STORE_NAME);
+
+      restaurantDetailsStore.openCursor(restaurantId, 'next')
+      .then( function setFavorite(cursor){
+        if(cursor){
+          let updateData = cursor.value;
+          updateData.is_favorite = !updateData.is_favorite
+
+          cursor.update(updateData)
+          .then(()=>{
+            console.log(`${updateData.name} favorite: ${updateData.is_favorite}`
+          )})
+
+          cursor.continue().then( setFavorite ) // go to the next result
+        }else{
+          // not more results
+        }
+      })
+
+      return tx.complete
+    })
     // set it on the server
      //fetch('PUT', `http://localhost:1337/restaurants/${restaurantId}/?is_favourite=true`)
   }
