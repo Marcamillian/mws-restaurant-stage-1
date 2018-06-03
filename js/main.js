@@ -159,8 +159,8 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
  * Create restaurant HTML.
  */
 createRestaurantHTML = (restaurant) => {
-  const li = document.createElement('li');
 
+  const li = document.createElement('li');
 
   const imageContainer = document.createElement('div');
   imageContainer.classList.add('image-container');
@@ -180,9 +180,10 @@ createRestaurantHTML = (restaurant) => {
   image.alt = DBHelper.imageAltTextForRestaurant(restaurant);
   imageContainer.append(image);
 
-  // add favourite icon
+  // add favorite icon
   const favButton = document.createElement('button');
   favButton.classList.add('fav-button');
+  if(restaurant.is_favorite == "true"){ favButton.classList.add('fav') };
   favButton.addEventListener('click', ()=>{
     dbHelper.toggleAsFavorite(restaurant.id)
     .then(()=>{

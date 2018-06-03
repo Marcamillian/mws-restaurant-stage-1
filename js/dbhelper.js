@@ -23,7 +23,7 @@ class DBHelper {
           var restaurantStore = upgradeDb.createObjectStore( DBHelper.RESTAURANT_STORE_NAME, {keyPath:'id'});
           restaurantStore.createIndex('by-neighborhood', 'neighborhood');
           restaurantStore.createIndex('by-cuisine', 'cuisine_type');
-          restaurantStore.createIndex('by-favourite', 'is_favourite')
+          restaurantStore.createIndex('by-favorite', 'is_favorite')
         case 1:
           var reviewStore = upgradeDb.createObjectStore(DBHelper.REVIEW_STORE_NAME, {keyPath:'id'})
           reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
@@ -182,16 +182,22 @@ class DBHelper {
     
   }
 
-  storePendingRequest(url){
+  storePendingRequest(requestObject){
+
     return this.dbPromise.then((db)=>{
       let tx = db.transaction(DBHelper.PENDING_REQUEST_STORE, 'readwrite');
-      let pendingRequestStore = tx.objectStore(DNHelper.PENDING_REQUEST_STORE)
-      return pendingRequestStore.getAll()
+      let pendingRequestObjectStore = tx.objectStore(DBHelper.PENDING_REQUEST_STORE);
 
-      // ?? something to do with tx.complete
-      
+      pendingRequestObjectStore.put(requestObject)
 
-      // once we have the list of requests
+      return tx.complete;
+    })
+  }
+
+  sendPendingRequests(){
+    // open up all hte pending requests
+
+    // once we have the list of requests
       // for each request
         // make the fetch reuest
         // if success
@@ -200,27 +206,27 @@ class DBHelper {
           // notify user?
           // if the request errored - leave it in for next time
 
-      // TODO : Finish writing this
-      //let tx = db.transaction(DBHelper.)
-    })
-  }
-
-  sendPendingRequests(){
-
   }
 
   toggleAsFavorite(restaurantId){
+    //!! TODO: The rendering works correctly when setting the server side favorite with ARC - doesn't with site UI
+     // if restautant starts false - can change to true
+     // if restaurant starts true - tries to set as true - 
+    let isOnline = navigator.onLine;
 
     // set it locally
     return this.dbPromise.then((db)=>{
       let tx = db.transaction(DBHelper.RESTAURANT_STORE_NAME, "readwrite");
       let restaurantDetailsStore = tx.objectStore(DBHelper.RESTAURANT_STORE_NAME);
+      let updatedFavValue;
 
       restaurantDetailsStore.openCursor(restaurantId, 'next')
       .then( function setFavorite(cursor){
         if(cursor){
           let updateData = cursor.value;
-          updateData.is_favorite = !updateData.is_favorite
+          
+          updateData.is_favorite = !/true/i.test(updateData.is_favorite);
+          updatedFavValue = updateData.is_favorite;
 
           cursor.update(updateData)
           .then(()=>{
@@ -228,22 +234,24 @@ class DBHelper {
           )})
 
           cursor.continue().then( setFavorite ) // go to the next result
-        }else{
-          // not more results
+        }else{  // when at the end of the results
+          console.log(updatedFavValue)
+          return DBHelper.testFavToggle(restaurantId, updatedFavValue)
         }
       })
-
-      return tx.complete
     })
-    // set it on the server
-     //fetch('PUT', `http://localhost:1337/restaurants/${restaurantId}/?is_favourite=true`)
   }
 
-  removeAsFavorite(restaurantId){
-    console.log(`Setting restuarantID:${restaurantId}  is_favorite==false`);
-    // set it locally
-    // set it on the server
-     //fetch('PUT', `http://localhost:1337/restaurants/${restaurantId}/?is_favourite=false`)
+  // this is working -- need to interate it into the fav-call
+  static testFavToggle(restaurantId, favBoolean){
+    let requestObject = {
+      url: `${DBHelper.DATABASE_URL}/restaurants/${restaurantId}/?is_favorite=${favBoolean}`,
+      myInit: {method: 'PUT'}
+    }
+
+    return fetch(requestObject.url, requestObject.myInit)
+    .then(console.log("Sent that thing"))
+    .catch(console.error)
   }
 
   /**
