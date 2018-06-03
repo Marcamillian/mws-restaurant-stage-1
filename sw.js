@@ -1,3 +1,5 @@
+////////
+
 const staticCacheName = "restaurant-static-v2"
 const pictureCacheName = "restaurant-content-imgs"
 const detailsCacheName = "restaurant-content-details"

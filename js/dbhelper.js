@@ -28,7 +28,7 @@ class DBHelper {
           var reviewStore = upgradeDb.createObjectStore(DBHelper.REVIEW_STORE_NAME, {keyPath:'id'})
           reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
         case 2:
-         var pendingRequestsStore = upgradeDb.createObjectStore(DBHelper.PENDING_REQUEST_STORE, {keyPath:'submitTime'})
+         var pendingRequestsStore = upgradeDb.createObjectStore(DBHelper.PENDING_REQUEST_STORE, {autoIncrement:true})
       }
     })
 
@@ -209,9 +209,7 @@ class DBHelper {
   }
 
   toggleAsFavorite(restaurantId){
-    //!! TODO: The rendering works correctly when setting the server side favorite with ARC - doesn't with site UI
-     // if restautant starts false - can change to true
-     // if restaurant starts true - tries to set as true - 
+
     let isOnline = navigator.onLine;
 
     // set it locally
@@ -235,8 +233,21 @@ class DBHelper {
 
           cursor.continue().then( setFavorite ) // go to the next result
         }else{  // when at the end of the results
-          console.log(updatedFavValue)
-          return DBHelper.testFavToggle(restaurantId, updatedFavValue)
+          // prepare the request to send to the server
+
+          let requestObject = {
+            url: `${DBHelper.DATABASE_URL}/restaurants/${restaurantId}/?is_favorite=${updatedFavValue}`,
+            options: {method: 'PUT'}
+          }
+
+          if(isOnline){ // send it to the server
+            return fetch(requestObject.url, requestObject.options)
+              .then(()=>{console.log("Sent fav to server")})
+          }else{  // store the record for sending when you are back online
+            return dbHelper.storePendingRequest(requestObject)
+              .then(()=>{console.log("Stored offline for later")})
+          }
+
         }
       })
     })
@@ -246,12 +257,10 @@ class DBHelper {
   static testFavToggle(restaurantId, favBoolean){
     let requestObject = {
       url: `${DBHelper.DATABASE_URL}/restaurants/${restaurantId}/?is_favorite=${favBoolean}`,
-      myInit: {method: 'PUT'}
+      options: {method: 'PUT'}
     }
 
-    return fetch(requestObject.url, requestObject.myInit)
-    .then(console.log("Sent that thing"))
-    .catch(console.error)
+    return fetch(requestObject.url, requestObject.options)
   }
 
   /**
