@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     var condition = navigator.onLine ? "online" : "offline";
     console.log(`App is now ${condition}`)
     // TODO: Do something user facing when app goes on/offline
+    if(condition == "online"){ // send the offline requests if we have come online
+      dbHelper.sendPendingRequests()
+    }
   }
   updateOnlineStatus()
   window.addEventListener('online', updateOnlineStatus);
