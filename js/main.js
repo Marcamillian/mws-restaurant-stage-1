@@ -191,8 +191,17 @@ createRestaurantHTML = (restaurant) => {
     dbHelper.toggleAsFavorite(restaurant.id)
     .then(()=>{
       favButton.classList.toggle('fav')
+      const isFav = favButton.classList.contains('fav')
+      const labelText = (isFav)
+        ? `Remove ${restaurant.name} from favorites`
+        : `Add ${restaurant.name} to favorites`
+      favButton.setAttribute('aria-label', labelText)
     })
   })
+  const labelText = (restaurant.is_favorite == "true")
+    ? `Remove ${restaurant.name} from favorites`
+    : `Add ${restaurant.name} to favorites`
+  favButton.setAttribute(`aria-label`, labelText)
   imageContainer.append(favButton)
 
   li.append(imageContainer)
