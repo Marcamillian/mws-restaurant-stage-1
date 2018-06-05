@@ -178,10 +178,6 @@ class DBHelper {
     })
   }
 
-  deletePendingRequest(url){
-    
-  }
-
   storePendingRequest(requestObject){
 
     return this.dbPromise.then((db)=>{
@@ -194,18 +190,62 @@ class DBHelper {
     })
   }
 
+  getPendingRequests(){
+    return this.dbPromise.then((db)=>{
+      let tx = db.transaction(DBHelper.PENDING_REQUEST_STORE)
+      let pendingRequestStore = tx.objectStore(DBHelper.PENDING_REQUEST_STORE)
+      let requests = [];
+
+      return pendingRequestStore.openCursor()
+      .then(function getRequests(cursor){
+        if(cursor){
+          requests.push({
+            storeKey: cursor.key,
+            requestObject:cursor.value
+          })
+          return cursor.continue().then(getRequests)
+        }else{
+          return requests
+        }
+      })
+    })
+  }
+
   sendPendingRequests(){
     // open up all hte pending requests
+    const completeRequests = [];
 
-    // once we have the list of requests
-      // for each request
-        // make the fetch reuest
-        // if success
-          // remove item from the pening reuests
-        // if failure
-          // notify user?
-          // if the request errored - leave it in for next time
+    this.getPendingRequests()
+    .then((requestArray)=>{
+      // wait for all the fetch requests to complete
+      return Promise.all(requestArray.map(({storeKey, requestObject})=>{
+        // try to send the request
+        return fetch(requestObject.url,requestObject.options)
+        // if fetch successful - put it on a list to delete
+        .then(()=>{ completeRequests.push(storeKey)})
+        // catch any errors
+        .catch((err)=>{
+          console.log(`invaid request: ${requestObject.url} : ${err.message}`)
+        })
+      }))
+      // delete the requests that were successful
+    }).then(()=>{
+      console.log("promises processed")
+      console.log(`can now delete pending requests ${completeRequests.toString()}`)
+      return this.deletePendingRequests(completeRequests)
+    })
+  }
 
+  deletePendingRequests(storeKeyArray){
+    return this.dbPromise.then((db)=>{
+      let tx = db.transaction(DBHelper.PENDING_REQUEST_STORE, 'readwrite')
+      let pendingRequestStore = tx.objectStore(DBHelper.PENDING_REQUEST_STORE)
+      storeKeyArray.forEach((storeKey)=>{
+        pendingRequestStore.delete(storeKey)
+      })
+
+      return tx.complete
+    })
   }
 
   toggleAsFavorite(restaurantId){
@@ -242,10 +282,8 @@ class DBHelper {
 
           if(isOnline){ // send it to the server
             return fetch(requestObject.url, requestObject.options)
-              .then(()=>{console.log("Sent fav to server")})
           }else{  // store the record for sending when you are back online
             return dbHelper.storePendingRequest(requestObject)
-              .then(()=>{console.log("Stored offline for later")})
           }
 
         }
@@ -261,6 +299,14 @@ class DBHelper {
     }
 
     return fetch(requestObject.url, requestObject.options)
+  }
+
+  createTestPendingRequest(restaurantId, favValue){
+    let requestObject = {
+      url: `${DBHelper.DATABASE_URL}/restaurants/${restaurantId}/?is_favorite=${favValue}`,
+      options: {method: 'PUT'}
+    }
+    this.storePendingRequest(requestObject);
   }
 
   /**
