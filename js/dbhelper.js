@@ -46,6 +46,16 @@ class DBHelper {
       })
   }
 
+  refreshReviewData(restaurantId){
+    return fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)
+    .then((response)=>{ return response.json(); })
+    .then((reviews)=>{ return Promise.all(reviews.map((review)=>{this.addRecord(DBHelper.REVIEW_STORE_NAME, review)}, this)) })
+    .then(()=>{console.log(`Reviews updated for restaurant ${restaurantId}`)})
+    .catch((err)=>{
+      console.log(`Reviews database not updated: ${restaurantId}`)
+    })
+  }
+
   addRecord(storeName, recordObject){
     return this.dbPromise.then((db)=>{
       var tx = db.transaction(storeName, 'readwrite');

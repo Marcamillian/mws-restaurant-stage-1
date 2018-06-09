@@ -1,18 +1,55 @@
 let restaurant;
 var map;
 let dbHelper = new DBHelper()
+let reviewForm;
+
 
 /**
  * Initialize Google map, called from HTML.
  */
 window.addEventListener('DOMContentLoaded', (event)=>{
+
+  // Detect offline
+  // START -- Detect offline - Sourced from - https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+  let updateOnlineStatus = (event)=>{
+    var condition = navigator.onLine ? "online" : "offline";
+    console.log(`App is now ${condition}`)
+    // TODO: Do something user facing when app goes on/offline
+    if(condition == "online"){ // send the offline requests if we have come online
+      dbHelper.sendPendingRequests()
+    }
+  }
+
+  updateOnlineStatus()
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+
+
+  // get the restaurant ID
   dbHelper.getRestaurantById(Number(getParameterByName('id')))
-  .then((restaurant)=>{ // set the restaurant details
+  // set the restaurant details
+  .then((restaurant)=>{ 
     self.restaurant = restaurant;
-    fillRestaurantHTML(restaurant)
-    self.fillBreadcrumb();
+    fillRestaurantHTML(restaurant) // render the restaurant data
+    self.fillBreadcrumb(); // render the breadcrumb
     return restaurant;
-  })
+  // update the cache if online
+  }).then((restaurant)=>{ 
+    if(navigator.onLine){ // if online 
+      // get the new reviews from the server
+      return dbHelper.refreshReviewData(restaurant.id)
+      .then(()=>{ return restaurant })
+    }else{  // if not return the restaurant object
+      return restaurant
+    }
+  // get the reviews
+  }).then((restaurant)=>{ 
+    return dbHelper.getReviewsByRestaurantId(restaurant.id)
+  // fill the reviews
+  }).then(self.fillReviewsHTML)  
+
+  // control what reviewForm submission does
+  reviewForm = document.querySelector('form#review-form')
 })
 
 window.initMap = () => {
@@ -54,10 +91,6 @@ fetchRestaurantFromURL = (callback) => {
   }
 }
 
-fetchReviewsFromURL = (callback) =>{
-  
-}
-
 /**
  * Create restaurant HTML and add it to the webpage
  */
@@ -88,8 +121,6 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
   //  get & fill reviews  
-  dbHelper.getReviewsByRestaurantId(restaurant.id)
-  .then(fillReviewsHTML)
 
 }
 
@@ -185,4 +216,23 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+getReviewFields = ()=>{
+
+}
+
+sendReview = (event)=>{
+  event.preventDefault();
+
+  let reviewerName = reviewForm.elements['review-name'].value;
+  let reviewerRating = reviewForm.elements['review-rating'].value;
+  let reviewComments = reviewForm.elements['review-comments'].value;
+
+  console.log({
+    name: reviewerName,
+    rating: reviewerRating,
+    comments: reviewComments
+  })
+
 }

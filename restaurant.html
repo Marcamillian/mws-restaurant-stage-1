@@ -58,8 +58,31 @@
     <!-- Beginning reviews -->
     <section id="reviews-container">
       <ul id="reviews-list"></ul>
-    </section>
+    </section>  
     <!-- End reviews -->
+    <section id="submit-review">
+      <form id="review-form" onsubmit="sendReview(event)">
+        <!--
+          reviewer name - short text
+          rating - number OR buttons to click
+          comments - long text
+        -->
+        <input name="review-name" placeholder="Reviewer Name">
+        <div>
+          <input type="radio" name="review-rating" value=1>1</input>
+          <input type="radio" name="review-rating" value=2>2</input>
+          <input type="radio" name="review-rating" value=3>3</input>
+          <input type="radio" name="review-rating" value=4>4</input>
+        </div>
+        <input name="review-comments" placeholder="Comments">
+        
+        <input type="submit"></button> 
+
+
+      </form>
+    </section>
+
+    </section>
   </main>
   <!-- End main -->
 
