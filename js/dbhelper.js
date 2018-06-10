@@ -29,6 +29,7 @@ class DBHelper {
           reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
         case 2:
          var pendingRequestsStore = upgradeDb.createObjectStore(DBHelper.PENDING_REQUEST_STORE, {autoIncrement:true})
+         pendingRequestsStore.createIndex('by-request-type', 'requestType')
       }
     })
 
@@ -169,12 +170,36 @@ class DBHelper {
   }
 
   getReviewsByRestaurantId(restaurantId){
+    // get restaurants for that id
     return this.dbPromise.then((db)=>{// try to get the reviews from database
-      let tx = db.transaction(DBHelper.REVIEW_STORE_NAME);
-      let reviewDetailsStore = tx.objectStore(DBHelper.REVIEW_STORE_NAME)
+      let tx = db.transaction([DBHelper.REVIEW_STORE_NAME, DBHelper.PENDING_REQUEST_STORE]);
+      let reviewDetailsStore = tx.objectStore(DBHelper.REVIEW_STORE_NAME);
+      let pendingRequestObjectStore = tx.objectStore(DBHelper.PENDING_REQUEST_STORE);
+      let pendingReviews = [];
+
+
+      return Promise.all([  // get both idb reviews and pending reviews
+        reviewDetailsStore.index('by-restaurant-id').getAll(restaurantId),
+        pendingRequestObjectStore.index('by-request-type').openCursor('review')
+        .then(function filterForRestaurant(cursor){ // check that the pending review is for this restaurant
+          if(!cursor) return pendingReviews
+          else{
+            let request = cursor.value
+            let reviewData = request['options']['body'];
+
+            if(reviewData['restaurant_id'] == restaurantId){
+              pendingReviews.push(JSON.parse(cursor.value['options']['body']))
+            }
+            cursor.continue().then(filterForRestaurant)
+          }
+        })
+      ])
       
-      return reviewDetailsStore.index('by-restaurant-id').getAll(restaurantId);
-    }).then((response)=>{
+    }).then((responses)=>{ // join the results
+      return responses.reduce((response, result)=>{
+        return result.concat(response)
+      },[])
+    }).then((response)=>{// check if we have anything to show
       return(response.length != 0)
         ? response
         :fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)
@@ -186,6 +211,7 @@ class DBHelper {
             return reviews
           })
     })
+    
   }
 
   storePendingRequest(requestObject){
@@ -301,7 +327,51 @@ class DBHelper {
     })
   }
 
-  // this is working -- need to interate it into the fav-call
+  postReview(restaurantId, reviewData){
+
+    let requestObject;
+
+    reviewData['restaurant_id'] = restaurantId;
+
+    requestObject = {
+      requestType: 'review',
+      url: 'http://localhost:1337/reviews/',
+      options:{
+        method: 'POST',
+        body:JSON.stringify(reviewData)
+      }
+    }
+    
+    // try to send to the server
+    return this.dbPromise.then(()=>{
+      // if online -- send to server
+      if(navigator.onLine){
+        return fetch(requestObject.url, requestObject.options)
+      }else{  
+      // store locally till it can be sent
+        return dbHelper.storePendingRequest(requestObject)
+      }
+    })
+
+  }
+
+  storeTestPendingReview(restaurantId, reviewData){
+    let requestObject;
+
+    reviewData['restaurant_id'] = restaurantId;
+
+    requestObject = {
+      requestType: 'review',
+      url: 'http://localhost:1337/reviews/',
+      options:{
+        method: 'POST',
+        body:JSON.stringify(reviewData)
+      }
+    }
+    
+    return dbHelper.storePendingRequest(requestObject)
+  }
+
   static testFavToggle(restaurantId, favBoolean){
     let requestObject = {
       url: `${DBHelper.DATABASE_URL}/restaurants/${restaurantId}/?is_favorite=${favBoolean}`,

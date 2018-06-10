@@ -192,6 +192,26 @@ createReviewHTML = (review) => {
   return li;
 }
 
+getReviewFields = ()=>{
+  return {
+   name: reviewForm.elements['review-name'].value,
+   rating: reviewForm.elements['review-rating'].value,
+   comments: reviewForm.elements['review-comments'].value
+ }
+}
+
+sendReview = (event)=>{
+ event.preventDefault();
+
+ return dbHelper.postReview(self.restaurant.id, getReviewFields())
+ //tell the user its complete
+ .then(()=>{console.log("Review Sent")})
+ // clear the form for the next review
+ .then(()=>{
+
+ })
+}
+
 /**
  * Add restaurant name to the breadcrumb navigation menu
  */
@@ -218,21 +238,3 @@ getParameterByName = (name, url) => {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
-getReviewFields = ()=>{
-
-}
-
-sendReview = (event)=>{
-  event.preventDefault();
-
-  let reviewerName = reviewForm.elements['review-name'].value;
-  let reviewerRating = reviewForm.elements['review-rating'].value;
-  let reviewComments = reviewForm.elements['review-comments'].value;
-
-  console.log({
-    name: reviewerName,
-    rating: reviewerRating,
-    comments: reviewComments
-  })
-
-}
