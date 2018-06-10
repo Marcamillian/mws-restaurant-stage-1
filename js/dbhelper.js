@@ -185,20 +185,21 @@ class DBHelper {
           if(!cursor) return pendingReviews
           else{
             let request = cursor.value
-            let reviewData = request['options']['body'];
+            let reviewData = JSON.parse(request['options']['body']);
 
             if(reviewData['restaurant_id'] == restaurantId){
-              pendingReviews.push(JSON.parse(cursor.value['options']['body']))
+              pendingReviews.push(reviewData);
             }
-            cursor.continue().then(filterForRestaurant)
+            return cursor.continue().then(filterForRestaurant)
           }
         })
       ])
       
     }).then((responses)=>{ // join the results
-      return responses.reduce((response, result)=>{
+      let combinedReviews = [];
+      return responses.reduce((result, response)=>{
         return result.concat(response)
-      },[])
+      },combinedReviews)
     }).then((response)=>{// check if we have anything to show
       return(response.length != 0)
         ? response
