@@ -50,10 +50,29 @@ class DBHelper {
   refreshReviewData(restaurantId){
     return fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)
     .then((response)=>{ return response.json(); })
+    .then((reviews)=>{ return this.deleteReviewData().then(()=>{ return reviews })})
     .then((reviews)=>{ return Promise.all(reviews.map((review)=>{this.addRecord(DBHelper.REVIEW_STORE_NAME, review)}, this)) })
-    .then(()=>{console.log(`Reviews updated for restaurant ${restaurantId}`)})
+    .then(()=>{
+      console.log(`Reviews updated for restaurant ${restaurantId}`)
+      return 
+    })
     .catch((err)=>{
       console.log(`Reviews database not updated: ${restaurantId}`)
+    })
+  }
+
+  deleteReviewData(restaurantId){
+    return this.dbPromise.then((db)=>{
+      var tx = db.transaction(DBHelper.REVIEW_STORE_NAME, 'readwrite')
+      var reviewStore = tx.objectStore(DBHelper.REVIEW_STORE_NAME)
+      reviewStore.index('by-restaurant-id').openCursor(restaurantId, "next")
+      .then(function deleteData(cursor){
+        if(!cursor) return // end of the reviews
+        else{
+          cursor.delete()
+          return cursor.continue().then(deleteData)
+        }
+      })
     })
   }
 
@@ -200,7 +219,7 @@ class DBHelper {
       return responses.reduce((result, response)=>{
         return result.concat(response)
       },combinedReviews)
-    }).then((response)=>{// check if we have anything to show
+    }).then((response)=>{// check if we have anything to show - get from server if we don't
       return(response.length != 0)
         ? response
         :fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${restaurantId}`)

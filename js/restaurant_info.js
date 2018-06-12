@@ -27,14 +27,12 @@ window.addEventListener('DOMContentLoaded', (event)=>{
 
   // get the restaurant ID
   dbHelper.getRestaurantById(Number(getParameterByName('id')))
-  // set the restaurant details
-  .then((restaurant)=>{ 
+  .then((restaurant)=>{ // set the restaurant details
     self.restaurant = restaurant;
     fillRestaurantHTML(restaurant) // render the restaurant data
     self.fillBreadcrumb(); // render the breadcrumb
     return restaurant;
-  // update the cache if online
-  }).then((restaurant)=>{ 
+  }).then((restaurant)=>{ // update the cache if online
     if(navigator.onLine){ // if online 
       // get the new reviews from the server
       return dbHelper.refreshReviewData(restaurant.id)
@@ -192,6 +190,19 @@ createReviewHTML = (review) => {
   return li;
 }
 
+clearReviewsHTML = ()=>{
+  let reviewsContainer = document.querySelector('#reviews-container');
+  let reviewsTitle = reviewsContainer.querySelector('h2')
+  let reviewsList = reviewsContainer.querySelector('ul')
+
+  reviewsContainer.removeChild(reviewsTitle);
+  
+  while (reviewsList.hasChildNodes()){
+    reviewsList.removeChild(reviewsList.lastChild)
+  }
+
+}
+
 getReviewFields = ()=>{
   return {
    name: reviewForm.elements['review-name'].value,
@@ -200,16 +211,34 @@ getReviewFields = ()=>{
  }
 }
 
+clearReviewFields = ()=>{
+  reviewForm.elements['review-name'].value = null;
+  reviewForm.querySelectorAll('input[type=radio]').forEach((radio)=>{ radio.checked = false})
+  reviewForm.elements['review-comments'].value = null;
+}
+
 sendReview = (event)=>{
  event.preventDefault();
 
  return dbHelper.postReview(self.restaurant.id, getReviewFields())
- //tell the user its complete
- .then(()=>{console.log("Review Sent")})
- // clear the form for the next review
- .then(()=>{
-
+ .then((postReponse)=>{  // clear the form
+    return clearReviewFields()
+  })
+ .then(()=>{ // update the database
+   return (navigator.onLine === true) ? dbHelper.refreshReviewData(self.restaurant.id) : undefined
  })
+ .then(()=>{ // get the reviews
+   return dbHelper.getReviewsByRestaurantId(self.restaurant.id)
+ }).then((reviews)=>{
+   clearReviewsHTML();
+   return fillReviewsHTML(reviews)
+ })
+}
+
+refreshReviewHTML = ()=>{
+  // reset the reviews html to the beginning - reviews container and reviews-list ul
+
+
 }
 
 /**
