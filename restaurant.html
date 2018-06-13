@@ -60,21 +60,21 @@
       <ul id="reviews-list"></ul>
     </section>  
     <!-- End reviews -->
-    <section id="submit-review">
+    <section id="submit-review" aria-label="submit a review">
       <form id="review-form" onsubmit="sendReview(event)">
         <!--
           reviewer name - short text
           rating - number OR buttons to click
           comments - long text
         -->
-        <input name="review-name" placeholder="Reviewer Name">
-        <div>
-          <input type="radio" name="review-rating" value=1>1</input>
-          <input type="radio" name="review-rating" value=2>2</input>
-          <input type="radio" name="review-rating" value=3>3</input>
-          <input type="radio" name="review-rating" value=4>4</input>
+        <input name="review-name" placeholder="Reviewer Name" aria-label="reviewer name">
+        <div role="radiogroup" tab-index="1" aria-label="Review Rating">
+          <input role="radio" type="radio" name="review-rating" value=1 aria-label="1 star">1</input>
+          <input role="radio" type="radio" name="review-rating" value=2 aria-label="2 star">2</input>
+          <input role="radio" type="radio" name="review-rating" value=3 aria-label="3 star">3</input>
+          <input role="radio" type="radio" name="review-rating" value=4 aria-label="4 star">4</input>
         </div>
-        <input name="review-comments" placeholder="Comments">
+        <input name="review-comments" placeholder="Review Comments" aria-label="review comments">
         
         <input type="submit"></button> 
 
