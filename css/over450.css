@@ -3,6 +3,6 @@
 }
 
 /* ==== Restaurant Details ===== */
-#restaurant-container, #reviews-container{
+#restaurant-container, #reviews-container, #submit-review-container{
     max-width:400px;
 }
