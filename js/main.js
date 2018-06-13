@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     return Promise.all([
       dbHelper.getCuisines().then(fillCuisinesHTML),
       dbHelper.getNeighborhoods().then(fillNeighborhoodsHTML)
-    ]).then(updateRestaurants)
-  })  // fill with the locally stored
+    ])})
+  .then(updateRestaurants)  // fill with the locally stored
   .catch((err)=>{
     console.log(`Couldn't populate the database || ${err}`)
     return Promise.all([
@@ -128,6 +128,7 @@ updateRestaurants = () => {
   dbHelper.getRestaurantsByCuisineAndNeighborhood(cuisine, neighborhood)
     .then(resetRestaurants)
     .then(fillRestaurantsHTML)
+    .then(listenLazyLoad)
     .catch( err => console.error(err) )
   
 }
@@ -169,15 +170,15 @@ createRestaurantHTML = (restaurant) => {
   imageContainer.classList.add('image-container');
 
   const image = document.createElement('img');
-  image.className = 'restaurant-img';
+  image.classList.add('restaurant-img');
 
   // decompose the url to allow selection of different images
   // in response to the image display size
   const baseURL = DBHelper.imageUrlForRestaurant(restaurant);
   let urlComponents = baseURL.split(".");
 
-  image.src = `${urlComponents[0]}-400_1x.${urlComponents[1] || 'jpg' }`; // src for fallback
-  image.srcset = `${urlComponents[0]}-400_1x.${ urlComponents[1] || 'jpg' } 1x,
+  image.lazySrc = `${urlComponents[0]}-400_1x.${urlComponents[1] || 'jpg' }`; // src for fallback
+  image.lazySrcset = `${urlComponents[0]}-400_1x.${ urlComponents[1] || 'jpg' } 1x,
                   ${urlComponents[0]}-800_2x.${ urlComponents[1] || 'jpg' } 2x`;
 
   image.alt = DBHelper.imageAltTextForRestaurant(restaurant);
@@ -242,4 +243,35 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     });
     self.markers.push(marker);
   });
+}
+
+/** set up lazy loading on the images */
+listenLazyLoad = ()=>{
+
+  let images = document.getElementsByClassName('restaurant-img');
+
+  let options = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.01
+  }
+
+  let observeImages = (entries)=>{
+    entries.forEach( ( entry ) =>{
+      if(entry.intersectionRatio > 0 ){
+        observer.unobserve(entry.target);
+        entry.target.src = entry.target.lazySrc;
+        entry.target.srcset = entry.target.lazySrcset;
+      }
+    })
+  }
+
+  let observer = new IntersectionObserver(observeImages, options);
+
+  //observe all of the images
+  for(i=0; i < images.length; i++){
+    observer.observe(images[i]);
+  }
+
+  return 
 }
