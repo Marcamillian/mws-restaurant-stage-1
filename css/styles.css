@@ -240,6 +240,15 @@ nav h1 a {
 }
 
 /* ====================== Restaurant Details ====================== */
+
+h2 {
+  color: #f58500;
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: -1px;
+  padding-bottom: 1pt;
+}
+
 .inside #maincontent{
   display:flex;
   flex-direction:row;
@@ -293,7 +302,7 @@ nav h1 a {
   text-transform: uppercase;
 	width: 90%;
 }
-#restaurant-container, #reviews-container {
+#restaurant-container, #reviews-container, #submit-review-container {
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -308,13 +317,7 @@ nav h1 a {
   flex-direction:column;
   align-items:center;
 }
-#reviews-container h2 {
-  color: #f58500;
-  font-size: 2rem;
-  font-weight: 300;
-  letter-spacing: -1px;
-  padding-bottom: 1pt;
-}
+
 #reviews-list {
   margin: 0;
   padding: 0;
@@ -335,6 +338,12 @@ nav h1 a {
 }
 #restaurant-hours td {
   color: #666;
+}
+
+/* ========== review submit container ============*/
+
+#review-submit-container{
+  max-width:400px;
 }
 
 /*====================== Service Worker Update UI ==================*/

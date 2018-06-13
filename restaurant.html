@@ -55,12 +55,8 @@
       <table id="restaurant-hours"></table>
     </section>
     <!-- end restaurant -->
-    <!-- Beginning reviews -->
-    <section id="reviews-container">
-      <ul id="reviews-list"></ul>
-    </section>  
-    <!-- End reviews -->
-    <section id="submit-review" aria-label="submit a review">
+    <section id="submit-review-container" aria-label="submit a review">
+      <h2> Leave a review </h2> 
       <form id="review-form" onsubmit="sendReview(event)">
         <!--
           reviewer name - short text
@@ -68,11 +64,12 @@
           comments - long text
         -->
         <input name="review-name" placeholder="Reviewer Name" aria-label="reviewer name">
-        <div role="radiogroup" tab-index="1" aria-label="Review Rating">
+        <div role="radiogroup" tab-index="1" aria-label="Review Rating" class="review-rating">
           <input role="radio" type="radio" name="review-rating" value=1 aria-label="1 star">1</input>
           <input role="radio" type="radio" name="review-rating" value=2 aria-label="2 star">2</input>
           <input role="radio" type="radio" name="review-rating" value=3 aria-label="3 star">3</input>
           <input role="radio" type="radio" name="review-rating" value=4 aria-label="4 star">4</input>
+          <input role="radio" type="radio" name="review-rating" value=5 aria-label="5 star">5</input>
         </div>
         <input name="review-comments" placeholder="Review Comments" aria-label="review comments">
         
@@ -81,8 +78,13 @@
 
       </form>
     </section>
+    <!-- Beginning reviews -->
+    <section id="reviews-container">
+      <ul id="reviews-list"></ul>
+    </section>  
+    <!-- End reviews -->
+    
 
-    </section>
   </main>
   <!-- End main -->
 
