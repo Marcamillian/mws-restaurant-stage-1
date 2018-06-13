@@ -2,7 +2,7 @@ var gulp = require('gulp');
 var del = require('del');
 var gm = require('gulp-gm');
 var rename = require('gulp-rename');
-
+var cleanCSS = require('gulp-clean-css');
 
 var resizeImageTasks =[];
 
@@ -44,6 +44,12 @@ gulp.task('clear-images', ()=>{
 gulp.task('grab-idb', ()=>{
     gulp.src(['node_modules/idb/lib/idb.js'])
       .pipe(gulp.dest('js'))
+})
+
+gulp.task('minify-css', ()=>{
+    return gulp.src('css_src/*.css')
+      .pipe(cleanCSS({compatibility: 'ie8'}))
+      .pipe(gulp.dest('css'))
 })
 
 gulp.task('default', ['clear-images', 'resize-images'])
