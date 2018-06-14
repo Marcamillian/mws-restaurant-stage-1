@@ -32,7 +32,8 @@ window.addEventListener('DOMContentLoaded', (event)=>{
     fillRestaurantHTML(restaurant) // render the restaurant data
     self.fillBreadcrumb(); // render the breadcrumb
     return restaurant;
-  }).then((restaurant)=>{ // update the cache if online
+  })
+  .then((restaurant)=>{ // update the cache if online
     if(navigator.onLine){ // if online 
       // get the new reviews from the server
       return dbHelper.refreshReviewData(restaurant.id)
@@ -41,28 +42,19 @@ window.addEventListener('DOMContentLoaded', (event)=>{
       return restaurant
     }
   // get the reviews
-  }).then((restaurant)=>{ 
+  })
+  .then((restaurant)=>{ 
     return dbHelper.getReviewsByRestaurantId(restaurant.id)
-  // fill the reviews
-  }).then(self.fillReviewsHTML)  
+  })
+  .then(self.fillReviewsHTML) 
+  .then((retaurant)=>{
+    this.generateMap();
+  })
+   
 
   // control what reviewForm submission does
   reviewForm = document.querySelector('form#review-form')
 })
-
-window.initMap = () => {
-
-  dbHelper.getRestaurantById(getParameterByName('id'))
-  .then((restaurant)=>{  // set the map details
-    self.map = new google.maps.Map(document.getElementById('map'),{
-      zoom: 16,
-      center: self.restaurant.latlng,
-      scrollwheel: false
-    })
-    DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-  })
-
-}
 
 /**
  * Get current restaurant from page URL.
@@ -265,5 +257,39 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+generateMap = (dynamicMap)=>{
+
+  let mapContainer = document.getElementById('map');
+  let dims = {
+    height: mapContainer.offsetHeight,
+    width: mapContainer.offsetWidth
+  }
+
+  let loc = self.restaurant.latlng;
+
+  
+  if( dynamicMap === true){  // dynamic map 
+
+    dbHelper.getRestaurantById(getParameterByName('id'))
+    .then((restaurant)=>{  // set the map details
+      self.map = new google.maps.Map(document.getElementById('map'),{
+        zoom: 16,
+        center: loc,
+        scrollwheel: false
+      })
+      DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+    })
+
+  }else{  // static map
+    
+    let staticMap = document.createElement('img');
+    staticMap.classList.add('static-map');
+    staticMap.src=`https://maps.googleapis.com/maps/api/staticmap?center=${loc.lat},${loc.lng}&zoom=16&size=${dims.width}x${dims.height}&format=jpg&maptype=roadmap &key=AIzaSyAV6MJYAq70-YOW_SCCXFFaXzpjq8uyjAM`;
+    staticMap.alt = "Map of the area";
+    staticMap.addEventListener('click', ()=>{generateMap(true)})
+    mapContainer.appendChild(staticMap);
+  }
 }
 

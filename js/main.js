@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
       dbHelper.getCuisines().then(fillCuisinesHTML),
       dbHelper.getNeighborhoods().then(fillNeighborhoodsHTML)
     ])})
+  .then(generateMap)
   .then(updateRestaurants)  // fill with the locally stored
   .catch((err)=>{
     console.log(`Couldn't populate the database || ${err}`)
@@ -93,21 +94,6 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
     option.innerHTML = cuisine;
     option.value = cuisine;
     select.append(option);
-  });
-}
-
-/**
- * Initialize Google map, called from HTML.
- */
-window.initMap = () => {
-  let loc = {
-    lat: 40.722216,
-    lng: -73.987501
-  };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 12,
-    center: loc,
-    scrollwheel: false
   });
 }
 
@@ -274,4 +260,45 @@ listenLazyLoad = ()=>{
   }
 
   return 
+}
+
+generateMap = (dynamicMap)=>{
+
+  let mapContainer = document.getElementById('map');
+  let dims = {
+    height: mapContainer.offsetHeight,
+    width: mapContainer.offsetWidth
+  }
+
+  let loc = {
+    lat: 40.722216,
+    lng: -73.987501
+  };
+
+  
+  if( dynamicMap === true){  // dynamic map 
+
+    self.map = new google.maps.Map(mapContainer, {
+      zoom: 12,
+      center: loc,
+      scrollwheel: false
+    });
+
+    addMarkersToMap()
+
+  }else{  // static map
+    
+    let staticMap = document.createElement('img');
+    staticMap.classList.add('static-map');
+    staticMap.src=`https://maps.googleapis.com/maps/api/staticmap?center=${loc.lat},${loc.lng}&zoom=12&size=${dims.width}x${dims.height}&format=jpg&maptype=roadmap &key=AIzaSyAV6MJYAq70-YOW_SCCXFFaXzpjq8uyjAM`;
+    staticMap.alt = "Map of the area";
+    staticMap.addEventListener('click', ()=>{generateMap(true)})
+    mapContainer.appendChild(staticMap);
+  }
+  
+
+
+  
+
+
 }
