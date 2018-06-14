@@ -1,33 +1,60 @@
 let restaurant;
 var map;
 let dbHelper = new DBHelper()
+let reviewForm;
+
 
 /**
  * Initialize Google map, called from HTML.
  */
 window.addEventListener('DOMContentLoaded', (event)=>{
+
+  // Detect offline
+  // START -- Detect offline - Sourced from - https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+  let updateOnlineStatus = (event)=>{
+    var condition = navigator.onLine ? "online" : "offline";
+    console.log(`App is now ${condition}`)
+    // TODO: Do something user facing when app goes on/offline
+    if(condition == "online"){ // send the offline requests if we have come online
+      dbHelper.sendPendingRequests()
+    }
+  }
+
+  updateOnlineStatus()
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+
+
+  // get the restaurant ID
   dbHelper.getRestaurantById(Number(getParameterByName('id')))
   .then((restaurant)=>{ // set the restaurant details
     self.restaurant = restaurant;
-    fillRestaurantHTML(restaurant)
-    self.fillBreadcrumb();
+    fillRestaurantHTML(restaurant) // render the restaurant data
+    self.fillBreadcrumb(); // render the breadcrumb
     return restaurant;
   })
-})
-
-window.initMap = () => {
-
-  dbHelper.getRestaurantById(getParameterByName('id'))
-  .then((restaurant)=>{  // set the map details
-    self.map = new google.maps.Map(document.getElementById('map'),{
-      zoom: 16,
-      center: self.restaurant.latlng,
-      scrollwheel: false
-    })
-    DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+  .then((restaurant)=>{ // update the cache if online
+    if(navigator.onLine){ // if online 
+      // get the new reviews from the server
+      return dbHelper.refreshReviewData(restaurant.id)
+      .then(()=>{ return restaurant })
+    }else{  // if not return the restaurant object
+      return restaurant
+    }
+  // get the reviews
   })
+  .then((restaurant)=>{ 
+    return dbHelper.getReviewsByRestaurantId(restaurant.id)
+  })
+  .then(self.fillReviewsHTML) 
+  .then((retaurant)=>{
+    this.generateMap();
+  })
+   
 
-}
+  // control what reviewForm submission does
+  reviewForm = document.querySelector('form#review-form')
+})
 
 /**
  * Get current restaurant from page URL.
@@ -83,8 +110,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
-  fillReviewsHTML();
+  //  get & fill reviews  
+
 }
 
 /**
@@ -139,8 +166,10 @@ createReviewHTML = (review) => {
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
-  li.appendChild(date);
+  
+  reviewDate = new Date(review.createdAt)
+  date.innerHTML = reviewDate.toDateString()
+  li.appendChild(date); 
 
   const rating = document.createElement('p');
   rating.innerHTML = `Rating: ${review.rating}`;
@@ -151,6 +180,57 @@ createReviewHTML = (review) => {
   li.appendChild(comments);
 
   return li;
+}
+
+clearReviewsHTML = ()=>{
+  let reviewsContainer = document.querySelector('#reviews-container');
+  let reviewsTitle = reviewsContainer.querySelector('h2')
+  let reviewsList = reviewsContainer.querySelector('ul')
+
+  reviewsContainer.removeChild(reviewsTitle);
+  
+  while (reviewsList.hasChildNodes()){
+    reviewsList.removeChild(reviewsList.lastChild)
+  }
+
+}
+
+getReviewFields = ()=>{
+  return {
+   name: reviewForm.elements['review-name'].value,
+   rating: reviewForm.elements['review-rating'].value,
+   comments: reviewForm.elements['review-comments'].value
+ }
+}
+
+clearReviewFields = ()=>{
+  reviewForm.elements['review-name'].value = null;
+  reviewForm.querySelectorAll('input[type=radio]').forEach((radio)=>{ radio.checked = false})
+  reviewForm.elements['review-comments'].value = null;
+}
+
+sendReview = (event)=>{
+ event.preventDefault();
+
+ return dbHelper.postReview(self.restaurant.id, getReviewFields())
+ .then((postReponse)=>{  // clear the form
+    return clearReviewFields()
+  })
+ .then(()=>{ // update the database
+   return (navigator.onLine === true) ? dbHelper.refreshReviewData(self.restaurant.id) : undefined
+ })
+ .then(()=>{ // get the reviews
+   return dbHelper.getReviewsByRestaurantId(self.restaurant.id)
+ }).then((reviews)=>{
+   clearReviewsHTML();
+   return fillReviewsHTML(reviews)
+ })
+}
+
+refreshReviewHTML = ()=>{
+  // reset the reviews html to the beginning - reviews container and reviews-list ul
+
+
 }
 
 /**
@@ -178,3 +258,38 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+generateMap = (dynamicMap)=>{
+
+  let mapContainer = document.getElementById('map');
+  let dims = {
+    height: mapContainer.offsetHeight,
+    width: mapContainer.offsetWidth
+  }
+
+  let loc = self.restaurant.latlng;
+
+  
+  if( dynamicMap === true){  // dynamic map 
+
+    dbHelper.getRestaurantById(getParameterByName('id'))
+    .then((restaurant)=>{  // set the map details
+      self.map = new google.maps.Map(document.getElementById('map'),{
+        zoom: 16,
+        center: loc,
+        scrollwheel: false
+      })
+      DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+    })
+
+  }else{  // static map
+    
+    let staticMap = document.createElement('img');
+    staticMap.classList.add('static-map');
+    staticMap.src=`https://maps.googleapis.com/maps/api/staticmap?center=${loc.lat},${loc.lng}&zoom=16&size=${dims.width}x${dims.height}&format=jpg&maptype=roadmap &key=AIzaSyAV6MJYAq70-YOW_SCCXFFaXzpjq8uyjAM`;
+    staticMap.alt = "Map of the area";
+    staticMap.addEventListener('click', ()=>{generateMap(true)})
+    mapContainer.appendChild(staticMap);
+  }
+}
+

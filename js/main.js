@@ -10,13 +10,28 @@ let dbHelper = new DBHelper();
  */
 document.addEventListener('DOMContentLoaded', (event) => {
   
+  // START -- Detect offline - Sourced from - https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine/Online_and_offline_events
+  let updateOnlineStatus = (event)=>{
+    var condition = navigator.onLine ? "online" : "offline";
+    console.log(`App is now ${condition}`)
+    // TODO: Do something user facing when app goes on/offline
+    if(condition == "online"){ // send the offline requests if we have come online
+      dbHelper.sendPendingRequests()
+    }
+  }
+  updateOnlineStatus()
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus)
+  /* END -- Detect offline */
+
   dbHelper.populateOfflineDatabase()
   .then(()=>{ // fill with network fresh data
     return Promise.all([
       dbHelper.getCuisines().then(fillCuisinesHTML),
       dbHelper.getNeighborhoods().then(fillNeighborhoodsHTML)
-    ]).then(updateRestaurants)
-  })  // fill with the locally stored
+    ])})
+  .then(generateMap)
+  .then(updateRestaurants)  // fill with the locally stored
   .catch((err)=>{
     console.log(`Couldn't populate the database || ${err}`)
     return Promise.all([
@@ -83,21 +98,6 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
 }
 
 /**
- * Initialize Google map, called from HTML.
- */
-window.initMap = () => {
-  let loc = {
-    lat: 40.722216,
-    lng: -73.987501
-  };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 12,
-    center: loc,
-    scrollwheel: false
-  });
-}
-
-/**
  * Update page and map for current restaurants.
  */
 updateRestaurants = () => {
@@ -114,7 +114,8 @@ updateRestaurants = () => {
   dbHelper.getRestaurantsByCuisineAndNeighborhood(cuisine, neighborhood)
     .then(resetRestaurants)
     .then(fillRestaurantsHTML)
-    .catch( err => console.err(err) )
+    .then(listenLazyLoad)
+    .catch( err => console.error(err) )
   
 }
 
@@ -148,23 +149,49 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
  * Create restaurant HTML.
  */
 createRestaurantHTML = (restaurant) => {
+
   const li = document.createElement('li');
 
+  const imageContainer = document.createElement('div');
+  imageContainer.classList.add('image-container');
+
   const image = document.createElement('img');
-  image.className = 'restaurant-img';
+  image.classList.add('restaurant-img');
 
   // decompose the url to allow selection of different images
   // in response to the image display size
   const baseURL = DBHelper.imageUrlForRestaurant(restaurant);
   let urlComponents = baseURL.split(".");
 
-  image.src = `${urlComponents[0]}-400_1x.${urlComponents[1] || 'jpg' }`; // src for fallback
-  image.srcset = `${urlComponents[0]}-400_1x.${ urlComponents[1] || 'jpg' } 1x,
+  image.lazySrc = `${urlComponents[0]}-400_1x.${urlComponents[1] || 'jpg' }`; // src for fallback
+  image.lazySrcset = `${urlComponents[0]}-400_1x.${ urlComponents[1] || 'jpg' } 1x,
                   ${urlComponents[0]}-800_2x.${ urlComponents[1] || 'jpg' } 2x`;
 
   image.alt = DBHelper.imageAltTextForRestaurant(restaurant);
+  imageContainer.append(image);
 
-  li.append(image);
+  // add favorite icon
+  const favButton = document.createElement('button');
+  favButton.classList.add('fav-button');
+  if(restaurant.is_favorite == "true"){ favButton.classList.add('fav') };
+  favButton.addEventListener('click', ()=>{
+    dbHelper.toggleAsFavorite(restaurant.id)
+    .then(()=>{
+      favButton.classList.toggle('fav')
+      const isFav = favButton.classList.contains('fav')
+      const labelText = (isFav)
+        ? `Remove ${restaurant.name} from favorites`
+        : `Add ${restaurant.name} to favorites`
+      favButton.setAttribute('aria-label', labelText)
+    })
+  })
+  const labelText = (restaurant.is_favorite == "true")
+    ? `Remove ${restaurant.name} from favorites`
+    : `Add ${restaurant.name} to favorites`
+  favButton.setAttribute(`aria-label`, labelText)
+  imageContainer.append(favButton)
+
+  li.append(imageContainer)
 
   const name = document.createElement('h1');
   name.innerHTML = restaurant.name;
@@ -202,4 +229,76 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     });
     self.markers.push(marker);
   });
+}
+
+/** set up lazy loading on the images */
+listenLazyLoad = ()=>{
+
+  let images = document.getElementsByClassName('restaurant-img');
+
+  let options = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.01
+  }
+
+  let observeImages = (entries)=>{
+    entries.forEach( ( entry ) =>{
+      if(entry.intersectionRatio > 0 ){
+        observer.unobserve(entry.target);
+        entry.target.src = entry.target.lazySrc;
+        entry.target.srcset = entry.target.lazySrcset;
+      }
+    })
+  }
+
+  let observer = new IntersectionObserver(observeImages, options);
+
+  //observe all of the images
+  for(i=0; i < images.length; i++){
+    observer.observe(images[i]);
+  }
+
+  return 
+}
+
+generateMap = (dynamicMap)=>{
+
+  let mapContainer = document.getElementById('map');
+  let dims = {
+    height: mapContainer.offsetHeight,
+    width: mapContainer.offsetWidth
+  }
+
+  let loc = {
+    lat: 40.722216,
+    lng: -73.987501
+  };
+
+  
+  if( dynamicMap === true){  // dynamic map 
+
+    self.map = new google.maps.Map(mapContainer, {
+      zoom: 12,
+      center: loc,
+      scrollwheel: false
+    });
+
+    addMarkersToMap()
+
+  }else{  // static map
+    
+    let staticMap = document.createElement('img');
+    staticMap.classList.add('static-map');
+    staticMap.src=`https://maps.googleapis.com/maps/api/staticmap?center=${loc.lat},${loc.lng}&zoom=12&size=${dims.width}x${dims.height}&format=jpg&maptype=roadmap &key=AIzaSyAV6MJYAq70-YOW_SCCXFFaXzpjq8uyjAM`;
+    staticMap.alt = "Map of the area";
+    staticMap.addEventListener('click', ()=>{generateMap(true)})
+    mapContainer.appendChild(staticMap);
+  }
+  
+
+
+  
+
+
 }
