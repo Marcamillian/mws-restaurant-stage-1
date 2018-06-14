@@ -231,7 +231,7 @@ addMarkersToMap = (restaurants = self.restaurants) => {
   });
 }
 
-/** set up lazy loading on the images */
+/** set up lazy loading on the images - this article used for lazy loading https://www.mercurytide.co.uk/blog/article/lazy-loading-intersection-observer-api/ */
 listenLazyLoad = ()=>{
 
   let images = document.getElementsByClassName('restaurant-img');
